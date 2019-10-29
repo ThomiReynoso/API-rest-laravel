@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\User; //Importo Modelo Usuario para crear un objeto de este tipo
 
 class userController extends Controller
 {
@@ -34,7 +35,7 @@ class userController extends Controller
               
                    'name'     => 'required|alpha',
                    'surname'  => 'required|alpha',
-                   'email'    => 'required|email',
+                   'email'    => 'required|email|unique:users', //Comprobar si el usuario ya existe (duplicado)
                    'password' => 'required',
                   
             ]);
@@ -51,12 +52,29 @@ class userController extends Controller
                        
                );   
            }else{
-               
                //Validacion pasada correctamente
+
+                //Cifrar la contraseña
+                $pwd = password_hash($params->password, PASSWORD_BCRYPT, ['cost' => 4 ]);
+
+                //Crear Usuario
+                $user = new User();
+                $user->name = $params_array['name'];
+                $user->surname = $params_array['surname'];
+                $user->email = $params_array['email'];
+                $user->password = $pwd;
+                $user->role = 'ROLE_USER';
+
+
+               //Guardar Usuario
+                $user->save();
+               
+
                 $data = array(
                    'status' =>  'exito',
                    'code'   =>  200,
-                   'msj'    =>  'El usuario se ha creado correctamente'
+                   'msj'    =>  'El usuario se ha creado correctamente',
+                   'user'   =>  $user //devuelvo tambien, el objeto entero creado (por json a la vista)
                 );
                
            }
@@ -70,13 +88,7 @@ class userController extends Controller
                 );
        }
        
-       
-       
-       //Cifrar la contraseña
-       
-       //Comprobar si el usuario ya existe (duplicado)
-       
-       //Crear Usuario
+      
        
        //devuelvo array el cual lo convierto a json
        return response()->json($data, $data['code']);
