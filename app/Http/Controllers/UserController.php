@@ -55,8 +55,11 @@ class userController extends Controller
                //Validacion pasada correctamente
 
                 //Cifrar la contraseña
-                $pwd = password_hash($params->password, PASSWORD_BCRYPT, ['cost' => 4 ]);
-
+                //$pwd = password_hash($params->password, PASSWORD_BCRYPT, ['cost' => 4 ]);
+                
+                //uso este algo para que siempre cifre de la misma forma la pw
+                $pwd = hash('sha256', $params->password);
+               
                 //Crear Usuario
                 $user = new User();
                 $user->name = $params_array['name'];
@@ -96,10 +99,55 @@ class userController extends Controller
    
    public function login(request $request){
        
-       $name = $request->input('name');
-       $surname = $request->input('surname');
-  
-       return "Accion de login de usuarios: $name $surname ";
+       $jwtAuth = new \JwtAuth(); 
+      
+       
+       //Recibir datos por POST
+       $json = $request->input('json',null);
+       
+       $params = json_decode($json); //Objeto json
+       $params_array = json_decode($json, true); //Array json. el 'true' era para que se guarde en forma de array
+
+       //Validar esos datos 
+        $validate = \Validator::make($params_array,[
+              
+                   'email'    => 'required|email', //Comprobar si el usuario ya existe (duplicado)
+                   'password' => 'required',
+                  
+            ]);
+           
+        //Verifico validaciones
+        if($validate->fails()){
+           //Validacion fallida 
+           //array que voy a devolver
+            $signup = array(
+                'status' =>  'error',
+                'code'   =>  404,
+                'msj'    =>  'El usuario NO se ha podido loguear',
+                'error'  =>  $validate->errors()
+
+            );   
+        }else{
+       
+            //Cifrar la pw
+            //$pwd = password_hash($password, PASSWORD_BCRYPT, ['cost' => 4 ]); //el problema de usar esa func, es que NUNCA se cifra de la misma forma
+            $pwd = hash('sha256', $params->password);
+            
+            if(empty($params->getToken)){
+                //Devolver token 
+                $signup = $jwtAuth->signup($params->email, $pwd);
+                
+            } else {//devolver datos JSON
+            
+                $signup = $jwtAuth->signup($params->email, $pwd, true);
+                
+            }       
+            
+        }
+       
+
+       //devuelvo un objeto json
+       return response()->json($signup,200);
    }
    
    
