@@ -150,7 +150,23 @@ class userController extends Controller
        return response()->json($signup,200);
    }
    
-   
+   //metodo para actualizar datos del usuario
+   public function update(request $request) {
+       //recojo cabecera del token
+       
+       $token = $request->header('Authorization');
+       $jwtAuth = new \JwtAuth(); //lo instancio por el Alias
+       
+       $checkToken = $jwtAuth->checkToken($token);
+       
+       if($checkToken){
+           echo "Login CORRECTO";
+       } else {
+           echo "Login INCORRECTO";
+       }
+       
+       die();
+   }
    
    
 }
